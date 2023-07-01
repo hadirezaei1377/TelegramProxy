@@ -3,17 +3,13 @@ package main
 import (
 	"log"
 	"net/http"
+	"os"
 
-	"github.com/caarlos0/env/v6"
+	"github.com/joho/godotenv"
 	"golang.org/x/net/proxy"
 )
 
 // todo :
-
-// 2. Configuration: Consider using a configuration file instead of environment variables for
-//  easier management of proxy settings. You can use libraries like `"github.com/spf13/viper"`
-//   or `"github.com/joho/godotenv"` to handle configuration files.
-
 // 3. Security Improvements:
 //    - Currently, the proxy credentials (user and password) are stored in environment variables.
 //     It would be more secure to store them externally, such as in a configuration file or a secret management system.
@@ -27,11 +23,17 @@ type params struct {
 }
 
 func main() {
-	// Working with app params
-	cfg := params{}
-	err := env.Parse(&cfg)
+	// Load environment variables from .env file
+	err := godotenv.Load()
 	if err != nil {
-		log.Fatalf("Failed to parse environment variables: %s", err)
+		log.Fatalf("Failed to load environment variables: %s", err)
+	}
+
+	// Read configuration into struct
+	cfg := params{
+		User:     getEnv("PROXY_USER", ""),
+		Password: getEnv("PROXY_PASSWORD", ""),
+		Port:     getEnv("PROXY_PORT", "1080"),
 	}
 
 	// Initialize socks5 config
@@ -79,4 +81,12 @@ func main() {
 	if err != nil {
 		log.Fatalf("Error while serving proxy requests: %s", err)
 	}
+}
+
+func getEnv(key, fallback string) string {
+	value := os.Getenv(key)
+	if value == "" {
+		return fallback
+	}
+	return value
 }
